@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Asen Stok — Muhasebe</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ea; --surface:#ffffff; --surface2:#faf8f3; --border:#e6e0d4;
+  --text:#2a2420; --text2:#8a8175; --accent:#8b4513; --accent2:#a35a1f;
+  --blue:#0c447c; --green:#1e8449; --danger:#c0392b; --warn:#b7791f;
+  --shadow:0 1px 3px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;padding-bottom:40px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 14px}
+
+/* Header */
+header{background:var(--accent);color:#fff;padding:14px 0;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.3px}
+.brand .sub{font-size:11px;opacity:.85;font-weight:500}
+.clock{font-family:'DM Mono',monospace;font-size:12px;opacity:.9}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:5px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.tabs button{flex:1;min-width:110px;border:0;background:transparent;padding:10px 8px;border-radius:8px;font-family:'DM Sans';font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:.15s}
+.tabs button.active{background:var(--accent);color:#fff}
+
+.page{display:none}
+.page.active{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.page-title{font-family:'Syne';font-size:18px;font-weight:700}
+
+/* Cards / form */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h3{font-family:'Syne';font-size:14px;font-weight:700;margin-bottom:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;position:relative}
+.fg label{font-size:12px;font-weight:600;color:var(--text2)}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans';font-size:14px;background:var(--surface);color:var(--text);outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[readonly]{background:var(--surface2);color:var(--text2)}
+.btn{border:0;border-radius:9px;padding:11px 18px;font-family:'DM Sans';font-size:14px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-sm{padding:7px 12px;font-size:13px}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:#fdecea;color:var(--danger);border:1px solid #f5c6c0}
+.btn-full{width:100%}
+
+/* autocomplete dropdown */
+.ac-drop{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;max-height:230px;overflow-y:auto;z-index:100;box-shadow:0 6px 18px rgba(0,0,0,.12);display:none;margin-top:2px}
+.ac-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--surface2)}
+.ac-item:hover,.ac-item.hl{background:var(--surface2)}
+.ac-item .firma{font-size:10px;color:var(--text2)}
+.ac-item .fiyat{float:right;font-family:'DM Mono';font-size:11px;color:var(--accent)}
+
+/* fiyat gecmis kutu */
+.fiyat-box{background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:none}
+.fiyat-box .fb-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px}
+.fiyat-hist{display:flex;gap:8px;flex-wrap:wrap}
+.fh-chip{background:#fff;border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-size:11px;font-family:'DM Mono'}
+.fh-chip .fh-date{color:var(--text2);font-size:9px;display:block}
+.fh-chip .fh-val{font-weight:500;color:var(--text)}
+.fh-delta{font-weight:700;margin-left:4px}
+.up{color:var(--danger)} .down{color:var(--green)} .same{color:var(--text2)}
+
+/* canlı fiyat fark bandı */
+.fiyat-fark{font-size:12px;font-weight:700;margin-top:2px;min-height:16px;font-family:'DM Mono'}
+.fiyat-fark.big{padding:4px 8px;border-radius:6px}
+.fiyat-fark.big.up{background:#fdecea}
+.fiyat-fark.big.down{background:#e4f4e4}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--surface2)}
+th{background:var(--surface2);font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0}
+td.num,th.num{text-align:right;font-family:'DM Mono'}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:var(--surface2)}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.b-ok{background:#e4f4e4;color:var(--green)}
+.b-low{background:#fdecea;color:var(--danger)}
+.b-warn{background:#fef3d7;color:var(--warn)}
+.b-cikis{background:#eef2f7;color:var(--blue)}
+.b-duz{background:#f3eefb;color:#7d3fb5}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;box-shadow:var(--shadow)}
+.stat .v{font-family:'Syne';font-size:22px;font-weight:800}
+.stat .l{font-size:11px;color:var(--text2);margin-top:2px}
+
+.search{margin-bottom:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.hint{font-size:12px;color:var(--text2);background:var(--surface2);border-radius:8px;padding:8px 11px;margin-bottom:10px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:12px 22px;border-radius:24px;font-size:14px;font-weight:600;z-index:200;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1;bottom:30px}
+.loading{position:fixed;inset:0;background:rgba(244,241,234,.9);display:none;align-items:center;justify-content:center;z-index:300;flex-direction:column;gap:12px}
+.loading.show{display:flex}
+.spin{width:38px;height:38px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.right{text-align:right}
+.mini{font-size:11px;color:var(--text2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div>
+        <h1>Asen Stok</h1>
+        <div class="sub">Muhasebe · Kimyasal Giriş & Fiyat</div>
+      </div>
+    </div>
+    <div class="clock" id="clock">—</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="active" data-tab="giris" onclick="showTab('giris')">➕ Kimyasal Giriş</button>
+    <button data-tab="stok" onclick="showTab('stok')">📦 Stok Durumu</button>
+    <button data-tab="fiyat" onclick="showTab('fiyat')">💶 Fiyat Yönetimi</button>
+    <button data-tab="sayim" onclick="showTab('sayim')">📋 Sayım / Düzeltme</button>
+    <button data-tab="kayit" onclick="showTab('kayit')">🧾 Giriş Kayıtları</button>
+  </div>
+
+  <!-- ══════════ GİRİŞ ══════════ -->
+  <div class="page active" id="page-giris">
+    <div class="page-head"><div class="page-title">Kimyasal Giriş (Alım)</div></div>
+    <div class="card">
+      <h3>Gelen Kimyasal Ekle</h3>
+      <div class="hint">Fiyat girersen otomatik olarak fiyat geçmişine de işlenir. Kimyasalı listeden seç; yoksa "Yeni Kimyasal" ile ekle.</div>
+      <div class="grid2">
+        <div class="fg">
+          <label>Kimyasal</label>
+          <input type="text" id="g-kim" placeholder="Yazmaya başla (2 harf)..." autocomplete="off"
+            oninput="acFilter(this.value)" onfocus="acFilter(this.value)">
+          <div class="ac-drop" id="g-ac"></div>
+        </div>
+        <div class="fg">
+          <label>Tarih</label>
+          <input type="date" id="g-tarih">
+        </div>
+      </div>
+
+      <div class="fiyat-box" id="g-fiyatbox">
+        <div class="fb-title">SON FİYATLAR (bu kimyasal)</div>
+        <div class="fiyat-hist" id="g-fiyathist"></div>
+      </div>
+
+      <div class="grid3">
+        <div class="fg">
+          <label>Miktar (kg)</label>
+          <input type="number" id="g-kg" placeholder="0" step="0.1" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Birim Fiyat</label>
+          <input type="number" id="g-fiyat" placeholder="0.00" step="0.0001" inputmode="decimal" oninput="fiyatFark()">
+          <div id="g-fiyatfark" class="fiyat-fark"></div>
+        </div>
+        <div class="fg">
+          <label>Kur</label>
+          <select id="g-kur">
+            <option value="">—</option>
+            <option>EUR</option><option>USD</option><option>TL</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="fg">
+          <label>Firma / Tedarikçi</label>
+          <input type="text" id="g-firma" placeholder="Otomatik dolar" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>Fatura No</label>
+          <input type="text" id="g-fatura" placeholder="Opsiyonel">
+        </div>
+        <div class="fg">
+          <label>Not</label>
+          <input type="text" id="g-not" placeholder="Opsiyonel">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary btn-full" onclick="kaydetGiris()">💾 Girişi Kaydet</button>
+        <button class="btn btn-ghost" onclick="yeniKimyasalAc()">🧪 Yeni Kimyasal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ STOK ══════════ -->
+  <div class="page" id="page-stok">
+    <div class="page-head">
+      <div class="page-title">Stok Durumu</div>
+      <button class="btn btn-ghost btn-sm" onclick="yukleHepsi()">🔄 Yenile</button>
+    </div>
+    <div class="stats" id="stok-stats"></div>
+    <div class="search">
+      <input type="text" id="stok-ara" placeholder="🔍 Kimyasal ara..." oninput="renderStok()" autocomplete="off">
+    </div>
+    <div class="hint">Mevcut stok = Toplam giriş − reçete tüketimi ± sayım düzeltmesi. Kritik seviye altındakiler kırmızı.</div>
+    <div id="stok-icerik"></div>
+  </div>
+
+  <!-- ══════════ FİYAT ══════════ -->
+  <div class="page" id="page-fiyat">
+    <div class="page-head">
+      <div class="page-title">Fiyat Yönetimi</div>
+      <button class="btn btn-primary btn-sm" onclick="yeniKimyasalAc()">🧪 Yeni Kimyasal</button>
+    </div>
+    <div class="search">
+      <input type="text" id="fiyat-ara" placeholder="🔍 Kimyasal veya firma ara..." oninput="renderFiyat()" autocomplete="off">
+    </div>
+    <div class="hint">Her satır son 3 fiyatı ve önceki fiyata göre değişimi gösterir. Yeni fiyat "Kimyasal Giriş" ekranından girilir — orada fiyat yazınca buraya otomatik düşer.</div>
+    <div id="fiyat-icerik"></div>
+  </div>
+
+  <!-- ══════════ SAYIM ══════════ -->
+  <div class="page" id="page-sayim">
+    <div class="page-head"><div class="page-title">Sayım / Elle Düzeltme</div></div>
+    <div class="card">
+      <h3>Sayım Farkı Kaydet</h3>
+      <div class="hint">Fiziki sayımda bulduğun değeri gir. Sistem, kayıtlı stokla arasındaki farkı düzeltme hareketi olarak yazar — geçmiş silinmez, iz kalır.</div>
+      <div class="fg">
+        <label>Kimyasal</label>
+        <input type="text" id="s-kim" placeholder="Yazmaya başla..." autocomplete="off"
+          oninput="sacFilter(this.value)" onfocus="sacFilter(this.value)">
+        <div class="ac-drop" id="s-ac"></div>
+      </div>
+      <div class="grid3">
+        <div class="fg">
+          <label>Sistemdeki stok (kg)</label>
+          <input type="text" id="s-sistem" readonly>
+        </div>
+        <div class="fg">
+          <label>Sayımda bulunan (kg)</label>
+          <input type="number" id="s-sayilan" placeholder="0" step="0.1" inputmode="decimal" oninput="sayimFark()">
+        </div>
+        <div class="fg">
+          <label>Fark (düzeltme)</label>
+          <input type="text" id="s-fark" readonly>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Not (opsiyonel)</label>
+        <input type="text" id="s-not" placeholder="Örn: 2026 yıl başı sayımı">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="kaydetSayim()">💾 Düzeltmeyi Kaydet</button>
+    </div>
+    <div class="card">
+      <h3>Düzeltme Geçmişi</h3>
+      <div id="sayim-gecmis"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ KAYITLAR ══════════ -->
+  <div class="page" id="page-kayit">
+    <div class="page-head">
+      <div class="page-title">Giriş Kayıtları</div>
+      <button class="btn btn-ghost btn-sm" onclick="yukleHepsi()">🔄 Yenile</button>
+    </div>
+    <div class="search">
+      <input type="text" id="kayit-ara" placeholder="🔍 Kimyasal, firma, fatura ara..." oninput="renderKayit()" autocomplete="off">
+    </div>
+    <div id="kayit-icerik"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading"><div class="spin"></div><div id="loadmsg" class="mini">Yükleniyor...</div></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// AYAR — Deri Takip ile AYNI backend
+// ═══════════════════════════════════════════════════
+var API_URL = 'https://script.google.com/macros/s/AKfycbx0v7TbX1o_oL8ACkzh4QZaK9w3a1ikCqD-j8ajHdTyuAKVuCGfBz6jQwLpGOFDt3Q/exec';
+
+var KRITIK_ESIK = 50; // varsayılan kritik kg eşiği (kimyasal başına özelleştirilebilir - ileride)
+
+// State
+var kimListesi = [];      // KİMYASALLAR sheet (isim listesi)
+var fiyatGecmis = {};     // ad -> [{fiyat,kur,birim,firma,tarih}] eski→yeni
+var girisler = [];        // KIMYASAL_GIRIS
+var hareketler = [];      // KIMYASAL_HAREKET
+var stokList = [];        // hesaplanmış stok
+
+// ── Helpers ──
+function $(id){return document.getElementById(id);}
+function show(el){el.classList.add('show');}
+function hide(el){el.classList.remove('show');}
+function toast(m){var t=$('toast');t.textContent=m;show(t);setTimeout(function(){hide(t);},2200);}
+function loading(m){$('loadmsg').textContent=m||'Yükleniyor...';show($('loading'));}
+function loadingOff(){hide($('loading'));}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtNum(n){n=Number(n)||0;return n.toLocaleString('tr-TR',{maximumFractionDigits:2});}
+function fmtDate(s){if(!s)return'—';var d=new Date(s);if(isNaN(d))return s;return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+function clock(){var d=new Date();var gun=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][d.getDay()];$('clock').innerHTML='<div style="text-align:right"><div style="font-weight:500">'+String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()+'</div><div style="font-size:11px;opacity:.8">'+gun+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div></div>';}
+setInterval(clock,10000);clock();
+
+// ── API ──
+async function apiGet(action,extra){
+  var url=API_URL+'?action='+action+(extra||'');
+  var r=await fetch(url); var j=await r.json();
+  return j.ok?j.data:[];
+}
+async function apiPost(payload){
+  var r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  return await r.json();
+}
+
+// ── Tabs ──
+function showTab(t){
+  document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.tab===t);});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  $('page-'+t).classList.add('active');
+  if(t==='stok')renderStok();
+  if(t==='fiyat')renderFiyat();
+  if(t==='sayim')renderSayimGecmis();
+  if(t==='kayit')renderKayit();
+}
+
+// ═══════════════════════════════════════════════════
+// YÜKLEME
+// ═══════════════════════════════════════════════════
+async function yukleHepsi(){
+  loading('Veriler yükleniyor...');
+  try{
+    var res=await Promise.all([
+      apiGet('getKimyasallar'),        // {ok,kimyasallar} -> özel
+      apiGet('getKimyasalFiyat'),
+      apiGet('getGiris'),
+      apiGet('getHareket'),
+      apiGet('getStok')
+    ]);
+    // getKimyasallar farklı key döndürüyor; ayrı çek
+    var kj=await (await fetch(API_URL+'?action=getKimyasallar')).json();
+    kimListesi=kj.kimyasallar||[];
+
+    var fiyatRaw=res[1]||[];
+    girisler=res[2]||[];
+    hareketler=res[3]||[];
+    stokList=res[4]||[];
+
+    // fiyat geçmişini kimyasala göre grupla + tarihe göre sırala
+    fiyatGecmis={};
+    fiyatRaw.forEach(function(row){
+      var ad=String(row.kimyasal||'').trim(); if(!ad)return;
+      if(!fiyatGecmis[ad])fiyatGecmis[ad]=[];
+      fiyatGecmis[ad].push({
+        fiyat:Number(row.fiyat)||0, kur:row.kur||'', birim:row.birim||'KG',
+        firma:row.firma||'', tarih:row.gecerlilikTarihi||''
+      });
+    });
+    Object.keys(fiyatGecmis).forEach(function(ad){
+      fiyatGecmis[ad].sort(function(a,b){return String(a.tarih).localeCompare(String(b.tarih));});
+    });
+
+    loadingOff();
+  }catch(e){
+    loadingOff();
+    toast('⚠️ Bağlantı hatası');
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// AUTOCOMPLETE (giriş ekranı)
+// ═══════════════════════════════════════════════════
+function acFilter(q){
+  var box=$('g-ac'); q=(q||'').trim().toLocaleUpperCase('tr');
+  if(q.length<2){box.style.display='none';return;}
+  var list=kimListesi.filter(function(k){return String(k).toLocaleUpperCase('tr').indexOf(q)>=0;}).slice(0,40);
+  if(!list.length){box.style.display='none';return;}
+  box.innerHTML=list.map(function(k){
+    var fh=fiyatGecmis[k], son=fh&&fh.length?fh[fh.length-1]:null;
+    var fs=son?('<span class="fiyat">'+fmtNum(son.fiyat)+' '+son.kur+'</span>'):'';
+    var firma=son&&son.firma?('<div class="firma">'+son.firma+'</div>'):'';
+    return '<div class="ac-item" onclick="acPick('+JSON.stringify(k).replace(/"/g,'&quot;')+')">'+fs+k+firma+'</div>';
+  }).join('');
+  box.style.display='block';
+}
+function acPick(k){
+  $('g-kim').value=k; $('g-ac').style.display='none';
+  // fiyat geçmişini göster + firma/kur/fiyat otomatik doldur
+  var fh=fiyatGecmis[k];
+  var box=$('g-fiyatbox'), hist=$('g-fiyathist');
+  if(fh&&fh.length){
+    var last3=fh.slice(-3);
+    hist.innerHTML=last3.map(function(f,i){
+      var delta='';
+      var realIdx=fh.length-last3.length+i;
+      if(realIdx>0){
+        var prev=fh[realIdx-1].fiyat;
+        if(prev>0){
+          var pct=((f.fiyat-prev)/prev*100);
+          var cls=pct>0.01?'up':(pct<-0.01?'down':'same');
+          var arrow=pct>0.01?'▲':(pct<-0.01?'▼':'=');
+          delta='<span class="fh-delta '+cls+'">'+arrow+Math.abs(pct).toFixed(1)+'%</span>';
+        }
+      }
+      return '<div class="fh-chip"><span class="fh-date">'+fmtDate(f.tarih)+'</span><span class="fh-val">'+fmtNum(f.fiyat)+' '+f.kur+'</span>'+delta+'</div>';
+    }).join('');
+    box.style.display='block';
+    var son=fh[fh.length-1];
+    _sonFiyat={fiyat:son.fiyat,kur:son.kur,tarih:son.tarih};
+    if(!$('g-fiyat').value)$('g-fiyat').value=son.fiyat;
+    if(!$('g-kur').value)$('g-kur').value=son.kur;
+    if(!$('g-firma').value)$('g-firma').value=son.firma;
+  }else{
+    box.style.display='none';
+    _sonFiyat=null;
+  }
+  fiyatFark();
+}
+var _sonFiyat=null;
+function fiyatFark(){
+  var el=$('g-fiyatfark'); if(!el)return;
+  el.className='fiyat-fark'; el.textContent='';
+  var yeni=parseFloat($('g-fiyat').value);
+  if(!_sonFiyat || isNaN(yeni) || _sonFiyat.fiyat<=0){return;}
+  var prev=_sonFiyat.fiyat;
+  var pct=(yeni-prev)/prev*100;
+  if(Math.abs(pct)<0.05){ el.className='fiyat-fark same'; el.textContent='= değişim yok ('+fmtNum(prev)+' '+_sonFiyat.kur+')'; return; }
+  var zam=pct>0;
+  var cls=zam?'up':'down';
+  var arrow=zam?'▲':'▼';
+  var kelime=zam?'zam':'indirim';
+  var big=Math.abs(pct)>=20?' big':'';
+  el.className='fiyat-fark '+cls+big;
+  el.textContent=arrow+' '+Math.abs(pct).toFixed(1)+'% '+kelime+' (önceki '+fmtNum(prev)+' '+_sonFiyat.kur+')';
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#g-kim')&&!e.target.closest('#g-ac'))$('g-ac').style.display='none';
+  if(!e.target.closest('#s-kim')&&!e.target.closest('#s-ac'))$('s-ac').style.display='none';
+});
+
+// ═══════════════════════════════════════════════════
+// GİRİŞ KAYDET
+// ═══════════════════════════════════════════════════
+async function kaydetGiris(){
+  var kim=$('g-kim').value.trim();
+  var kg=parseFloat($('g-kg').value);
+  if(!kim){toast('⚠️ Kimyasal seç');return;}
+  if(!kg||kg<=0){toast('⚠️ Geçerli miktar gir');return;}
+  var data={
+    id:'g_'+genId(),
+    tarih:$('g-tarih').value||todayStr(),
+    kimyasal:kim,
+    kg:kg,
+    birimFiyat:$('g-fiyat').value!==''?parseFloat($('g-fiyat').value):'',
+    kur:$('g-kur').value,
+    birim:'KG',
+    firma:$('g-firma').value.trim(),
+    faturaNo:$('g-fatura').value.trim(),
+    not:$('g-not').value.trim()
+  };
+  loading('Kaydediliyor...');
+  try{
+    // kimyasal listede yoksa ekle
+    if(kimListesi.indexOf(kim)<0){
+      await apiPost({action:'addKimyasal',name:kim});
+      kimListesi.push(kim);
+    }
+    await apiPost({action:'addGiris',data:data});
+    loadingOff();
+    toast('✓ Giriş kaydedildi');
+    // formu temizle (kimyasal kalsın, hızlı ardışık giriş için)
+    $('g-kg').value='';$('g-fatura').value='';$('g-not').value='';
+    $('g-fiyatfark').textContent='';$('g-fiyatfark').className='fiyat-fark';
+    await yukleHepsi();
+  }catch(e){loadingOff();toast('⚠️ Hata');console.error(e);}
+}
+
+async function yeniKimyasalAc(){
+  var ad=prompt('Yeni kimyasal adı (TAM ve DOĞRU yaz — bu isim reçetelerle eşleşecek):');
+  if(!ad)return; ad=ad.trim();
+  if(!ad)return;
+  if(kimListesi.indexOf(ad)>=0){toast('Zaten var');return;}
+  loading('Ekleniyor...');
+  try{
+    await apiPost({action:'addKimyasal',name:ad});
+    kimListesi.push(ad);
+    loadingOff();toast('✓ Kimyasal eklendi');
+    $('g-kim').value=ad;acPick(ad);
+  }catch(e){loadingOff();toast('⚠️ Hata');}
+}
+
+// ═══════════════════════════════════════════════════
+// STOK RENDER
+// ═══════════════════════════════════════════════════
+function renderStok(){
+  var q=($('stok-ara').value||'').trim().toLocaleUpperCase('tr');
+  var list=stokList.filter(function(s){return !q||s.kimyasal.toLocaleUpperCase('tr').indexOf(q)>=0;});
+
+  var toplam=stokList.length;
+  var kritik=stokList.filter(function(s){return s.mevcut<KRITIK_ESIK&&s.mevcut>0;}).length;
+  var bitti=stokList.filter(function(s){return s.mevcut<=0;}).length;
+  var toplamKg=stokList.reduce(function(a,s){return a+(s.mevcut>0?s.mevcut:0);},0);
+  $('stok-stats').innerHTML=
+    '<div class="stat"><div class="v">'+toplam+'</div><div class="l">Kimyasal çeşidi</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--danger)">'+kritik+'</div><div class="l">Kritik seviye</div></div>'+
+    '<div class="stat"><div class="v" style="color:var(--text2)">'+bitti+'</div><div class="l">Tükendi</div></div>'+
+    '<div class="stat"><div class="v">'+fmtNum(toplamKg)+'</div><div class="l">Toplam kg</div></div>';
+
+  if(!list.length){$('stok-icerik').innerHTML='<div class="empty">Kayıt yok. Önce giriş yap.</div>';return;}
+  // kritikler üste
+  list.sort(function(a,b){return a.mevcut-b.mevcut;});
+  var rows=list.map(function(s){
+    var durum,bcls;
+    if(s.mevcut<=0){durum='Tükendi';bcls='b-low';}
+    else if(s.mevcut<KRITIK_ESIK){durum='Kritik';bcls='b-low';}
+    else{durum='Yeterli';bcls='b-ok';}
+    return '<tr>'+
+      '<td>'+s.kimyasal+'</td>'+
+      '<td class="num">'+fmtNum(s.giris)+'</td>'+
+      '<td class="num" style="color:var(--blue)">'+fmtNum(s.cikis)+'</td>'+
+      '<td class="num" style="color:#7d3fb5">'+(s.duzeltme?((s.duzeltme>0?'+':'')+fmtNum(s.duzeltme)):'—')+'</td>'+
+      '<td class="num" style="font-weight:700">'+fmtNum(s.mevcut)+'</td>'+
+      '<td><span class="badge '+bcls+'">'+durum+'</span></td>'+
+    '</tr>';
+  }).join('');
+  $('stok-icerik').innerHTML='<div class="tbl-wrap"><table><thead><tr>'+
+    '<th>Kimyasal</th><th class="num">Giriş</th><th class="num">Çıkış</th><th class="num">Düzeltme</th><th class="num">Mevcut (kg)</th><th>Durum</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════
+// FİYAT RENDER (son 3 + %değişim)
+// ═══════════════════════════════════════════════════
+function renderFiyat(){
+  var q=($('fiyat-ara').value||'').trim().toLocaleUpperCase('tr');
+  var adlar=Object.keys(fiyatGecmis).filter(function(ad){
+    if(!q)return true;
+    var f=fiyatGecmis[ad], son=f[f.length-1];
+    return ad.toLocaleUpperCase('tr').indexOf(q)>=0 || (son&&String(son.firma).toLocaleUpperCase('tr').indexOf(q)>=0);
+  });
+  adlar.sort(function(a,b){return a.localeCompare(b,'tr');});
+  if(!adlar.length){$('fiyat-icerik').innerHTML='<div class="empty">Sonuç yok.</div>';return;}
+
+  var rows=adlar.map(function(ad){
+    var f=fiyatGecmis[ad];
+    var last3=f.slice(-3);
+    var chips=last3.map(function(x,i){
+      var delta='';
+      var realIdx=f.length-last3.length+i;
+      if(realIdx>0){
+        var prev=f[realIdx-1].fiyat;
+        if(prev>0){
+          var pct=((x.fiyat-prev)/prev*100);
+          var cls=pct>0.01?'up':(pct<-0.01?'down':'same');
+          var arrow=pct>0.01?'▲':(pct<-0.01?'▼':'=');
+          delta=' <span class="fh-delta '+cls+'">'+arrow+Math.abs(pct).toFixed(1)+'%</span>';
+        }
+      }
+      return '<span class="fh-chip"><span class="fh-date">'+fmtDate(x.tarih)+'</span><span class="fh-val">'+fmtNum(x.fiyat)+' '+x.kur+'</span>'+delta+'</span>';
+    }).join(' ');
+    var son=f[f.length-1];
+    return '<tr>'+
+      '<td style="min-width:160px"><div style="font-weight:600">'+ad+'</div><div class="mini">'+(son.firma||'')+'</div></td>'+
+      '<td><div class="fiyat-hist">'+chips+'</div></td>'+
+    '</tr>';
+  }).join('');
+  $('fiyat-icerik').innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Kimyasal</th><th>Son 3 fiyat (eski→yeni) · değişim</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════
+// SAYIM / DÜZELTME
+// ═══════════════════════════════════════════════════
+function sacFilter(q){
+  var box=$('s-ac'); q=(q||'').trim().toLocaleUpperCase('tr');
+  if(q.length<2){box.style.display='none';return;}
+  var list=kimListesi.filter(function(k){return String(k).toLocaleUpperCase('tr').indexOf(q)>=0;}).slice(0,40);
+  if(!list.length){box.style.display='none';return;}
+  box.innerHTML=list.map(function(k){
+    return '<div class="ac-item" onclick="sacPick('+JSON.stringify(k).replace(/"/g,'&quot;')+')">'+k+'</div>';
+  }).join('');
+  box.style.display='block';
+}
+function sacPick(k){
+  $('s-kim').value=k;$('s-ac').style.display='none';
+  var st=stokList.find(function(s){return s.kimyasal===k;});
+  var mevcut=st?st.mevcut:0;
+  $('s-sistem').value=fmtNum(mevcut)+' kg';
+  $('s-sistem').dataset.val=mevcut;
+  $('s-sayilan').value='';$('s-fark').value='';
+}
+function sayimFark(){
+  var sistem=parseFloat($('s-sistem').dataset.val)||0;
+  var sayilan=parseFloat($('s-sayilan').value);
+  if(isNaN(sayilan)){$('s-fark').value='';return;}
+  var fark=sayilan-sistem;
+  $('s-fark').value=(fark>0?'+':'')+fmtNum(fark)+' kg';
+  $('s-fark').style.color=fark<0?'var(--danger)':(fark>0?'var(--green)':'var(--text2)');
+}
+async function kaydetSayim(){
+  var kim=$('s-kim').value.trim();
+  var sistem=parseFloat($('s-sistem').dataset.val);
+  var sayilan=parseFloat($('s-sayilan').value);
+  if(!kim){toast('⚠️ Kimyasal seç');return;}
+  if(isNaN(sayilan)){toast('⚠️ Sayılan miktarı gir');return;}
+  var fark=sayilan-sistem;
+  if(Math.abs(fark)<0.001){toast('Fark yok, kayıt gerekmez');return;}
+  var data={
+    id:'h_'+genId(), tip:'duzeltme', kimyasal:kim, kg:fark,
+    kaynak:'sayim', kartId:'', tarih:todayStr(),
+    not:($('s-not').value.trim()||'Sayım düzeltmesi')+' (sistem:'+fmtNum(sistem)+' → sayılan:'+fmtNum(sayilan)+')'
+  };
+  loading('Kaydediliyor...');
+  try{
+    await apiPost({action:'addHareket',data:data});
+    loadingOff();toast('✓ Düzeltme kaydedildi');
+    $('s-kim').value='';$('s-sistem').value='';$('s-sayilan').value='';$('s-fark').value='';$('s-not').value='';
+    await yukleHepsi();renderSayimGecmis();
+  }catch(e){loadingOff();toast('⚠️ Hata');}
+}
+function renderSayimGecmis(){
+  var list=hareketler.filter(function(h){return h.tip==='duzeltme';})
+    .sort(function(a,b){return String(b.tarih).localeCompare(String(a.tarih));});
+  if(!list.length){$('sayim-gecmis').innerHTML='<div class="empty">Henüz düzeltme yok.</div>';return;}
+  var rows=list.map(function(h){
+    var kg=Number(h.kg)||0;
+    return '<tr><td>'+fmtDate(h.tarih)+'</td><td>'+h.kimyasal+'</td>'+
+      '<td class="num" style="color:'+(kg<0?'var(--danger)':'var(--green)')+'">'+(kg>0?'+':'')+fmtNum(kg)+' kg</td>'+
+      '<td class="mini">'+(h.not||'')+'</td></tr>';
+  }).join('');
+  $('sayim-gecmis').innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Tarih</th><th>Kimyasal</th><th class="num">Düzeltme</th><th>Not</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════
+// GİRİŞ KAYITLARI
+// ═══════════════════════════════════════════════════
+function renderKayit(){
+  var q=($('kayit-ara').value||'').trim().toLocaleUpperCase('tr');
+  var list=girisler.filter(function(g){
+    if(!q)return true;
+    return (g.kimyasal+' '+g.firma+' '+g.faturaNo).toLocaleUpperCase('tr').indexOf(q)>=0;
+  }).sort(function(a,b){return String(b.tarih).localeCompare(String(a.tarih));});
+  if(!list.length){$('kayit-icerik').innerHTML='<div class="empty">Kayıt yok.</div>';return;}
+  var rows=list.map(function(g){
+    var toplam=(Number(g.kg)||0)*(Number(g.birimFiyat)||0);
+    return '<tr>'+
+      '<td>'+fmtDate(g.tarih)+'</td>'+
+      '<td>'+g.kimyasal+'</td>'+
+      '<td class="num">'+fmtNum(g.kg)+'</td>'+
+      '<td class="num">'+(g.birimFiyat!==''&&g.birimFiyat!=null?fmtNum(g.birimFiyat)+' '+(g.kur||''):'—')+'</td>'+
+      '<td class="num">'+(toplam>0?fmtNum(toplam)+' '+(g.kur||''):'—')+'</td>'+
+      '<td class="mini">'+(g.firma||'')+(g.faturaNo?' · '+g.faturaNo:'')+'</td>'+
+      '<td><button class="btn btn-danger btn-sm" onclick="silGiris('+JSON.stringify(g.id).replace(/"/g,'&quot;')+')">Sil</button></td>'+
+    '</tr>';
+  }).join('');
+  $('kayit-icerik').innerHTML='<div class="tbl-wrap"><table><thead><tr>'+
+    '<th>Tarih</th><th>Kimyasal</th><th class="num">kg</th><th class="num">Birim Fiyat</th><th class="num">Toplam</th><th>Firma / Fatura</th><th></th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+async function silGiris(id){
+  if(!confirm('Bu giriş kaydını sil? (fiyat geçmişi silinmez, sadece bu alım kaydı)'))return;
+  loading('Siliniyor...');
+  try{
+    await apiPost({action:'delGiris',id:id});
+    loadingOff();toast('✓ Silindi');await yukleHepsi();renderKayit();
+  }catch(e){loadingOff();toast('⚠️ Hata');}
+}
+
+// ── Init ──
+$('g-tarih').value=todayStr();
+yukleHepsi();
+</script>
+</body>
+</html>
